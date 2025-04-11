@@ -15,9 +15,8 @@ Dieses Projekt dient ausschließlich zu Lern- und Spaßzwecken. Es ist **nicht v
   - Tetris
 - Weitere kleine Funktionen, die das System zu einem unterhaltsamen Schulprojekt machen.
 
-## Hinweise
+## Hinweis
 
-- Dieses Projekt ist nicht für den produktiven Einsatz gedacht.
 - Verbesserungsvorschläge können gerne über Issues eingereicht werden.
 
 Danke für dein Interesse an KleHausenOS! 😊
