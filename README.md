@@ -20,12 +20,6 @@ Dieses Projekt dient ausschließlich zu Lern- und Spaßzwecken. Es ist **nicht v
 - Dieses Projekt ist nicht für den produktiven Einsatz gedacht.
 - Verbesserungsvorschläge können gerne über Issues eingereicht werden.
 
-## Verbesserungsvorschläge einreichen
-
-1. Forke das Repository.
-2. Erstelle ein neues Issue mit deiner Idee oder deinem Vorschlag.
-3. Diskutiere mögliche Implementierungen mit dem Projektinhaber.
-
 Danke für dein Interesse an KleHausenOS! 😊
 
 ---
