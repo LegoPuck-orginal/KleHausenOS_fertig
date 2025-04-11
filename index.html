@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KleHausenOS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="terminal-window">
+        <div class="terminal-header">
+            <div class="control-dots">
+                <div class="control-dot red"></div>
+                <div class="control-dot yellow"></div>
+                <div class="control-dot green"></div>
+            </div>
+        </div>
+        
+        <div class="terminal-body">
+            <div id="signup-container" class="hidden">
+                <h2>Create Account</h2>
+                <input type="text" id="new-username" placeholder="Username">
+                <input type="password" id="new-password" placeholder="Password">
+                <button onclick="createAccount()">Create</button>
+            </div>
+
+            <div id="login-container" class="hidden">
+                <h2>Login</h2>
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <button onclick="login()">Login</button>
+                <button onclick="deleteAccount()" style="background:#ff4444">Delete Account</button>
+            </div>
+            <div id="error-message"></div>
+        </div>
+    </div>
+
+    <div id="desktop" class="hidden">
+        <div class="os-title">KleHausenOS</div>
+        <div class="taskbar">
+            <button onclick="toggleAppLauncher()">≡</button>
+            <div class="taskbar-apps" id="taskbar-apps"></div>
+            <div class="clock" id="clock"></div>
+        </div>
+
+        <div class="app-launcher" id="app-launcher">
+            <div class="app-launcher-header">
+                <input type="text" id="app-search-input" placeholder="Search applications..." 
+                       style="width: 100%; padding: 8px; background: var(--header-bg); border: 1px solid var(--accent-color); color: var(--text-color);">
+            </div>
+            <div class="app-list" id="app-list">
+                <div class="app-item" onclick="openApp('calculator')">
+                    <img src="img/calculator.png" width="16" alt="Calculator">
+                    Calculator
+                </div>
+                <div class="app-item" onclick="openApp('theme-settings')">
+                    <img src="img/settings.png" width="16" alt="Settings">
+                    Theme Settings
+                </div>
+                <div class="app-item" onclick="openApp('tetris')">
+                    <img src="img/tetris.png" width="16" alt="Tetris">
+                    Tetris
+                </div>
+                <div class="app-item" onclick="openApp('pong')">
+                    <img src="img/pong.png" width="16" alt="Pong">
+                    Pong
+                </div>
+            </div>
+        </div>
+
+        <div class="app-icon" data-app="calculator" ondblclick="openApp('calculator')" style="left: 20px; top: 100px;">
+            <img src="img/calculator.png" alt="Calculator" draggable="false">
+            <div>Calculator</div>
+        </div>
+
+        <div class="app-icon" data-app="theme-settings" ondblclick="openApp('theme-settings')" style="left: 20px; top: 220px;">
+            <img src="img/settings.png" alt="Settings" draggable="false">
+            <div>Theme Settings</div>
+        </div>
+
+        <div class="app-icon" data-app="tetris" ondblclick="openApp('tetris')" style="left: 20px; top: 340px;">
+            <img src="img/tetris.png" alt="Tetris" draggable="false">
+            <div>Tetris</div>
+        </div>
+
+        <div class="app-icon" data-app="pong" ondblclick="openApp('pong')" style="left: 20px; top: 460px;">
+            <img src="img/pong.png" alt="Pong" draggable="false">
+            <div>Pong</div>
+        </div>
+
+        <div id="calculator-app" class="app-window hidden">
+            <div class="window-header">
+                <span>Calculator</span>
+                <div class="window-controls">
+                    <button class="minimize-btn" onclick="minimizeApp('calculator')">−</button>
+                    <button onclick="closeApp('calculator')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="calculator-display" id="display">0</div>
+            <div class="calculator-buttons">
+                <button onclick="appendNumber('7')">7</button>
+                <button onclick="appendNumber('8')">8</button>
+                <button onclick="appendNumber('9')">9</button>
+                <button onclick="appendOperator('+')">+</button>
+                <button onclick="appendNumber('4')">4</button>
+                <button onclick="appendNumber('5')">5</button>
+                <button onclick="appendNumber('6')">6</button>
+                <button onclick="appendOperator('-')">-</button>
+                <button onclick="appendNumber('1')">1</button>
+                <button onclick="appendNumber('2')">2</button>
+                <button onclick="appendNumber('3')">3</button>
+                <button onclick="appendOperator('*')">×</button>
+                <button onclick="appendNumber('0')">0</button>
+                <button onclick="appendDecimal()">.</button>
+                <button onclick="calculate()">=</button>
+                <button onclick="appendOperator('/')">÷</button>
+                <button onclick="clearDisplay()" style="grid-column: span 4">Clear</button>
+            </div>
+        </div>
+
+        <div id="theme-settings-app" class="app-window hidden">
+            <div class="window-header">
+                <span>Theme Settings</span>
+                <div class="window-controls">
+                    <button class="minimize-btn" onclick="minimizeApp('theme-settings')">−</button>
+                    <button onclick="closeApp('theme-settings')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="theme-control">
+                <label>Accent Color:</label>
+                <div class="color-picker-container">
+                    <div class="color-preview" id="accent-preview" 
+                         style="background: var(--accent-color)"
+                         onclick="document.getElementById('accent-picker').click()"></div>
+                    <input type="color" id="accent-picker" onchange="updateAccentColor(this.value)">
+                    <button onclick="document.getElementById('accent-picker').click()">Choose Color</button>
+                </div>
+            </div>
+            <div class="theme-control">
+                <label>Theme Mode:</label>
+                <select class="theme-select" id="theme-mode" onchange="toggleThemeMode(this.value)">
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode</option>
+                </select>
+            </div>
+            <div class="theme-control">
+                <label>Background Color:</label>
+                <div class="color-picker-container">
+                    <div class="color-preview" id="bg-color-preview"
+                         style="background: var(--bg-color)"
+                         onclick="document.getElementById('bg-color-picker').click()"></div>
+                    <input type="color" id="bg-color-picker" onchange="updateBackgroundColor(this.value)">
+                    <button onclick="document.getElementById('bg-color-picker').click()">Choose Color</button>
+                </div>
+            </div>
+            <div class="theme-control">
+                <label>Background Image:</label>
+                <div class="bg-image-controls">
+                    <input type="text" id="bg-image-url" 
+                           placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                           class="theme-select">
+                    <div class="bg-example">Example: https://source.unsplash.com/random/1920x1080</div>
+                    <div class="bg-button-group">
+                        <button onclick="updateBackground()">Apply Image</button>
+                        <button onclick="clearBackgroundImage()" style="background:#ff4444">Clear Image</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tetris-app" class="app-window hidden">
+            <div class="window-header">
+                <span>Tetris</span>
+                <div class="window-controls">
+                    <button id="tetris-pause-btn" onclick="toggleTetrisPause()">Pause</button>
+                    <button class="minimize-btn" onclick="minimizeApp('tetris')">−</button>
+                    <button onclick="closeApp('tetris')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="tetris-container">
+                <canvas id="tetris-canvas" width="160" height="320"></canvas>
+                <div class="tetris-game-over" id="tetris-game-over">
+                    <h2>Game Over!</h2>
+                    <div>Final Score: <span id="final-score">0</span></div>
+                    <button onclick="restartTetris()">Play Again</button>
+                </div>
+                <div class="tetris-next-block">
+                    Next:
+                    <canvas id="tetris-next-canvas" width="80" height="80"></canvas>
+                </div>
+                <div class="tetris-info">Score: <span id="score">0</span></div>
+                <div class="tetris-controls">
+                    ← → : Move<br>
+                    ↑ : Rotate<br>
+                    ↓ : Soft Drop
+                </div>
+            </div>
+        </div>
+
+        <div id="pong-app" class="app-window hidden" style="width: 600px; height: 400px;">
+            <div class="window-header">
+                <span>Pong</span>
+                <div class="window-controls">
+                    <button id="pong-pause-btn" onclick="togglePongPause()">Pause</button>
+                    <button class="minimize-btn" onclick="minimizeApp('pong')">−</button>
+                    <button onclick="closeApp('pong')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="pong-container">
+                <div id="pong-start-screen" class="pong-start-screen">
+                    <h2>Select Game Mode</h2>
+                    <button onclick="startPong('local')">Local VS</button>
+                    <button onclick="startPong('bot')">VS Bot</button>
+                </div>
+                <canvas id="pong-canvas"></canvas>
+                <div class="pong-score">
+                    <span id="player1-score">0</span> - <span id="player2-score">0</span>
+                </div>
+                <div class="pong-game-over" id="pong-game-over">
+                    <h2>Game Over!</h2>
+                    <div>Winner: <span id="pong-winner"></span></div>
+                    <button onclick="restartPong()">Play Again</button>
+                </div>
+                <div class="pong-controls">
+                    Player 1: W/S<br>
+                    Player 2: ↑/↓
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
