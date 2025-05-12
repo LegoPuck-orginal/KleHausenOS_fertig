@@ -4,7 +4,899 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KleHausenOS</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --accent-color: #00ff00;
+            --bg-color: #1a1a1a;
+            --window-bg: #2d2d2d;
+            --header-bg: #222;
+            --text-color: #ffffff;
+            --icon-size: 100px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Ubuntu Mono', monospace;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .light-mode {
+            --bg-color: #ffffff;
+            --window-bg: #f0f0f0;
+            --header-bg: #e0e0e0;
+            --text-color: #000000;
+        }
+
+        .os-title {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: var(--accent-color);
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .terminal-window {
+            background: var(--window-bg);
+            width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        .terminal-header {
+            padding: 10px;
+            background: var(--header-bg);
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .control-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        .terminal-body {
+            padding: 20px;
+        }
+
+        input {
+            background: var(--header-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 8px;
+            margin: 10px 0;
+            width: 100%;
+            outline: none;
+        }
+
+        button {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #desktop {
+            height: 100vh;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(0, 0, 0, 0.2);
+            z-index: 999;
+        }
+
+        .clock {
+            margin-left: auto;
+            padding: 4px 8px;
+            font-family: monospace;
+        }
+
+        .app-icon {
+            position: absolute;
+            width: var(--icon-size);
+            padding: 8px;
+            cursor: pointer;
+            user-select: none;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+
+        .app-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .app-icon img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 4px;
+            pointer-events: none;
+        }
+
+        .app-icon div {
+            font-size: 0.8em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .app-window {
+            position: absolute;
+            background: var(--window-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            width: 300px;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            resize: both;
+            overflow: hidden;
+            min-width: 200px;
+            min-height: 150px;
+        }
+
+        .window-header {
+            padding: 8px;
+            background: var(--header-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            border-radius: 8px 8px 0 0;
+            user-select: none;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .minimize-btn {
+            background: #ffbd2e !important;
+        }
+
+        .calculator-display {
+            background: var(--header-bg);
+            padding: 15px;
+            margin: 10px;
+            text-align: right;
+            font-size: 24px;
+            border-radius: 4px;
+        }
+
+        .calculator-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .theme-control {
+            margin: 10px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .theme-control label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .theme-select {
+            background: var(--header-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 8px;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid var(--text-color);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-preview:hover {
+            transform: scale(1.05);
+        }
+
+        input[type="color"] {
+            opacity: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .bg-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bg-image-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bg-button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .bg-example {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .app-launcher {
+            position: fixed;
+            bottom: 40px;
+            left: 8px;
+            background: var(--window-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            width: 300px;
+            max-height: 60vh;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+        }
+
+        .app-launcher-header {
+            padding: 12px;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--accent-color);
+        }
+
+        .app-list {
+            padding: 12px;
+        }
+
+        .app-item {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .app-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .taskbar-apps {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .taskbar-app {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .taskbar-app:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .taskbar-app.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        .taskbar-app.minimized {
+            opacity: 0.6;
+        }
+
+        .taskbar-app img {
+            width: 16px;
+            height: 16px;
+        }
+
+        .tetris-container {
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        #tetris-canvas {
+            border: 2px solid var(--accent-color);
+            background: var(--header-bg);
+            width: 160px;
+            height: 320px;
+        }
+
+        .tetris-info {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+
+        .tetris-controls {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .tetris-next-block {
+            margin-top: 10px;
+            color: var(--text-color);
+        }
+
+        #tetris-next-canvas {
+            border: 1px solid var(--accent-color);
+            background: var(--header-bg);
+            margin-top: 5px;
+        }
+
+        .tetris-game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            text-align: center;
+            z-index: 1;
+            display: none;
+        }
+
+        .tetris-game-over h2 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .tetris-game-over button {
+            margin-top: 10px;
+            padding: 8px 16px;
+        }
+
+        .pong-container {
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            height: calc(100% - 40px);
+        }
+
+        #pong-canvas {
+            border: 2px solid var(--accent-color);
+            background: var(--header-bg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .pong-score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2em;
+            color: var(--accent-color);
+            font-family: monospace;
+        }
+
+        .pong-game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            text-align: center;
+            z-index: 1;
+            display: none;
+        }
+
+        .pong-game-over h2 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .pong-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            color: #888;
+            text-align: center;
+        }
+
+        .pong-start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .pong-start-screen button {
+            margin: 10px;
+            padding: 10px 20px;
+        }
+
+        /* Browser Styles */
+        .browser-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 10px;
+        }
+
+        /* File Manager Styles */
+        .file-manager-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 10px;
+        }
+
+        .file-manager-toolbar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .file-manager-path {
+            flex: 1;
+            padding: 8px;
+            background: var(--header-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+
+        .file-manager-content {
+            flex: 1;
+            border: 1px solid var(--accent-color);
+            background: var(--window-bg);
+            overflow: auto;
+            padding: 10px;
+        }
+
+        .file-manager-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+
+        .file-manager-item:hover {
+            background: var(--header-bg);
+        }
+
+        .file-manager-item.selected {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        .file-manager-item-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .file-manager-item-name {
+            flex: 1;
+        }
+
+        .file-manager-item-size {
+            margin-left: 10px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .file-manager-item-date {
+            margin-left: 10px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .file-manager-empty {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        .file-manager-context-menu {
+            position: absolute;
+            background: var(--window-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            padding: 5px 0;
+            z-index: 1000;
+            display: none;
+        }
+
+        .file-manager-context-menu.show {
+            display: block;
+        }
+
+        .file-manager-context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .file-manager-context-menu-item:hover {
+            background: var(--header-bg);
+        }
+
+        .file-dialog {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--window-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1001;
+            min-width: 300px;
+        }
+
+        .file-dialog-title {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .file-dialog-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            background: var(--header-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+
+        .file-dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Text Editor Styles */
+        .text-editor-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 10px;
+        }
+
+        .text-editor-toolbar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .text-editor-content {
+            flex: 1;
+            border: 1px solid var(--accent-color);
+            background: var(--window-bg);
+            overflow: auto;
+            padding: 10px;
+        }
+
+        .text-editor-textarea {
+            width: 100%;
+            height: 100%;
+            background: var(--window-bg);
+            color: var(--text-color);
+            border: none;
+            resize: none;
+            outline: none;
+            font-family: monospace;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* Context Menu Styles */
+        .browser-context-menu {
+            position: absolute;
+            background: var(--window-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            padding: 5px 0;
+            z-index: 1000;
+            display: none;
+        }
+
+        .browser-context-menu.show {
+            display: block;
+        }
+
+        .browser-context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .browser-context-menu-item:hover {
+            background: var(--header-bg);
+        }
+
+        .browser-toolbar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .browser-toolbar button {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        /* Tabs Styles */
+        .browser-tabs {
+            display: flex;
+            background: var(--header-bg);
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 5px;
+            border: 1px solid var(--accent-color);
+            border-bottom: none;
+        }
+
+        .browser-tab {
+            padding: 8px 15px;
+            background: var(--window-bg);
+            border-right: 1px solid var(--accent-color);
+            cursor: pointer;
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .browser-tab.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        .browser-tab-close {
+            margin-left: 5px;
+            font-size: 14px;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            text-align: center;
+            border-radius: 50%;
+        }
+
+        .browser-tab-close:hover {
+            background: rgba(255, 0, 0, 0.3);
+        }
+
+        .browser-new-tab {
+            padding: 8px 10px;
+            background: var(--window-bg);
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .browser-search-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+            background: var(--header-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .browser-search-input {
+            flex: 1;
+            padding: 8px;
+            background: var(--header-bg);
+            border: none;
+            color: var(--text-color);
+            outline: none;
+        }
+
+        .search-engine-select {
+            padding: 5px;
+            background: var(--header-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .search-engine-logo {
+            height: 24px;
+            margin-right: 5px;
+        }
+
+        .browser-address-bar {
+            flex: 1;
+            padding: 8px;
+            background: var(--header-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+
+        .browser-content {
+            flex: 1;
+            border: 1px solid var(--accent-color);
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+        }
+
+        .browser-iframe.active {
+            display: block;
+        }
+
+        .browser-error {
+            padding: 20px;
+            text-align: center;
+            color: #ff4444;
+            background: var(--window-bg);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* History Styles */
+        .browser-history-button {
+            position: relative;
+        }
+
+        .browser-history-panel {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: var(--window-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            z-index: 10;
+            display: none;
+        }
+
+        .browser-history-panel.show {
+            display: block;
+        }
+
+        .browser-history-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--header-bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .browser-history-item:hover {
+            background: var(--header-bg);
+        }
+
+        .browser-history-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .browser-history-time {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .browser-history-clear {
+            padding: 8px;
+            text-align: center;
+            border-top: 1px solid var(--accent-color);
+        }
+    </style>
 </head>
 <body>
     <div class="terminal-window">
@@ -15,7 +907,7 @@
                 <div class="control-dot green"></div>
             </div>
         </div>
-        
+
         <div class="terminal-body">
             <div id="signup-container" class="hidden">
                 <h2>Create Account</h2>
@@ -54,7 +946,7 @@
                     Calculator
                 </div>
                 <div class="app-item" onclick="openApp('theme-settings')">
-                    <img src="img/settings.png" width="16" alt="Settings">
+                    <img src="img/theme-settings.png" width="16" alt="Settings">
                     Theme Settings
                 </div>
                 <div class="app-item" onclick="openApp('tetris')">
@@ -65,6 +957,18 @@
                     <img src="img/pong.png" width="16" alt="Pong">
                     Pong
                 </div>
+                <div class="app-item" onclick="openApp('browser')">
+                    <img src="img/browser.png" width="16" alt="Browser">
+                    Browser
+                </div>
+                <div class="app-item" onclick="openApp('file-manager')">
+                    <img src="img/file-manager.png" width="16" alt="File Manager">
+                    File Manager
+                </div>
+                <div class="app-item" onclick="openApp('text-editor')">
+                    <img src="img/text-editor.png" width="16" alt="Text Editor">
+                    Text Editor
+                </div>
             </div>
         </div>
 
@@ -74,7 +978,7 @@
         </div>
 
         <div class="app-icon" data-app="theme-settings" ondblclick="openApp('theme-settings')" style="left: 20px; top: 220px;">
-            <img src="img/settings.png" alt="Settings" draggable="false">
+            <img src="img/theme-settings.png" alt="Settings" draggable="false">
             <div>Theme Settings</div>
         </div>
 
@@ -86,6 +990,21 @@
         <div class="app-icon" data-app="pong" ondblclick="openApp('pong')" style="left: 20px; top: 460px;">
             <img src="img/pong.png" alt="Pong" draggable="false">
             <div>Pong</div>
+        </div>
+
+        <div class="app-icon" data-app="browser" ondblclick="openApp('browser')" style="left: 20px; top: 580px;">
+            <img src="img/browser.png" alt="Browser" draggable="false">
+            <div>Browser</div>
+        </div>
+
+        <div class="app-icon" data-app="file-manager" ondblclick="openApp('file-manager')" style="left: 20px; top: 700px;">
+            <img src="img/file-manager.png" alt="File Manager" draggable="false">
+            <div>File Manager</div>
+        </div>
+
+        <div class="app-icon" data-app="text-editor" ondblclick="openApp('text-editor')" style="left: 20px; top: 820px;">
+            <img src="img/text-editor.png" alt="Text Editor" draggable="false">
+            <div>Text Editor</div>
         </div>
 
         <div id="calculator-app" class="app-window hidden">
@@ -227,8 +1146,2466 @@
                 </div>
             </div>
         </div>
+
+        <div id="browser-app" class="app-window hidden" style="width: 800px; height: 600px;">
+            <div class="window-header">
+                <span>Browser</span>
+                <div class="window-controls">
+                    <button class="minimize-btn" onclick="minimizeApp('browser')">−</button>
+                    <button onclick="closeApp('browser')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="browser-container">
+                <!-- Context Menu -->
+                <div class="browser-context-menu" id="browser-context-menu"></div>
+
+                <div class="browser-tabs" id="browser-tabs">
+                    <div class="browser-tab active" data-tab-id="tab-1">
+                        <span class="browser-tab-title">New Tab</span>
+                        <span class="browser-tab-close" onclick="closeTab('tab-1', event)">×</span>
+                    </div>
+                    <div class="browser-new-tab" onclick="createNewTab()">+</div>
+                </div>
+                <div class="browser-toolbar">
+                    <button onclick="browserGoBack()">←</button>
+                    <button onclick="browserGoForward()">→</button>
+                    <button onclick="browserRefresh()">↻</button>
+                    <div class="browser-history-button">
+                        <button onclick="toggleHistoryPanel()">History</button>
+                        <div class="browser-history-panel" id="browser-history-panel">
+                            <div id="browser-history-items"></div>
+                            <div class="browser-history-clear">
+                                <button onclick="clearBrowserHistory()">Clear History</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="text" class="browser-address-bar" id="browser-url" placeholder="Enter URL (e.g., https://example.com)" onkeydown="if(event.key === 'Enter') loadURL()">
+                    <button onclick="loadURL()">Go</button>
+                    <button onclick="downloadCurrentPage()">Download</button>
+                </div>
+                <div class="browser-search-container">
+                    <select class="search-engine-select" id="search-engine-select" onchange="updateSearchPlaceholder()">
+                        <option value="bing">Bing</option>
+                        <option value="google">Google</option>
+                        <option value="duckduckgo">DuckDuckGo</option>
+                        <option value="yahoo">Yahoo</option>
+                    </select>
+                    <input type="text" class="browser-search-input" id="browser-search" placeholder="Search with Bing..." onkeydown="if(event.key === 'Enter') searchWeb()">
+                    <button onclick="searchWeb()">Search</button>
+                </div>
+                <div class="browser-content" id="browser-content">
+                    <iframe id="browser-iframe-tab-1" class="browser-iframe active" data-tab-id="tab-1" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+                    <div id="browser-error" class="browser-error" style="display:none">
+                        <h3>Error Loading Page</h3>
+                        <p id="browser-error-message"></p>
+                        <button onclick="loadURL()">Try Again</button>
+                    </div>
+                    <div id="browser-home" class="browser-error">
+                        <h3>Welcome to KleHausenOS Browser</h3>
+                        <p>Enter a URL in the address bar above to start browsing</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="file-manager-app" class="app-window hidden" style="width: 700px; height: 500px;">
+            <div class="window-header">
+                <span>File Manager</span>
+                <div class="window-controls">
+                    <button class="minimize-btn" onclick="minimizeApp('file-manager')">−</button>
+                    <button onclick="closeApp('file-manager')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="file-manager-container">
+                <!-- Context Menu -->
+                <div class="file-manager-context-menu" id="file-manager-context-menu">
+                    <div class="file-manager-context-menu-item" id="context-open-file">Open</div>
+                    <div class="file-manager-context-menu-item" id="context-rename-file">Rename</div>
+                    <div class="file-manager-context-menu-item" id="context-delete-file">Delete</div>
+                </div>
+
+                <div class="file-manager-toolbar">
+                    <button onclick="navigateUp()">Up</button>
+                    <button onclick="refreshFileList()">Refresh</button>
+                    <input type="text" class="file-manager-path" id="file-manager-path" readonly>
+                    <button onclick="createNewFolder()">New Folder</button>
+                    <button onclick="createNewFile()">New File</button>
+                </div>
+                <div class="file-manager-content" id="file-manager-content">
+                    <!-- File list will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="text-editor-app" class="app-window hidden" style="width: 700px; height: 500px;">
+            <div class="window-header">
+                <span>Text Editor</span>
+                <div class="window-controls">
+                    <button class="minimize-btn" onclick="minimizeApp('text-editor')">−</button>
+                    <button onclick="closeApp('text-editor')" style="background:#ff4444">×</button>
+                </div>
+            </div>
+            <div class="text-editor-container">
+                <div class="text-editor-toolbar">
+                    <button onclick="newDocument()">New</button>
+                    <button onclick="openDocument()">Open</button>
+                    <button onclick="saveDocument()">Save</button>
+                    <button onclick="saveDocumentAs()">Save As</button>
+                    <span id="text-editor-filename">Untitled</span>
+                </div>
+                <div class="text-editor-content">
+                    <textarea id="text-editor-textarea" class="text-editor-textarea"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Dialog -->
+        <div class="file-dialog" id="file-dialog" style="display:none;">
+            <div class="file-dialog-title" id="file-dialog-title">Enter name</div>
+            <input type="text" class="file-dialog-input" id="file-dialog-input">
+            <div class="file-dialog-buttons">
+                <button onclick="cancelFileDialog()">Cancel</button>
+                <button onclick="confirmFileDialog()" id="file-dialog-confirm">OK</button>
+            </div>
+        </div>
     </div>
 
-    <script src="scripts.js"></script>
+    <script>
+        let openApps = [];
+        let zIndexCounter = 100;
+        let currentExpression = '';
+        const GRID_SIZE = 100;
+        let tetrisGame = null;
+        let pongGame = null;
+
+        class TetrisGame {
+            constructor(canvas, windowElement) {
+                this.canvas = canvas;
+                this.windowElement = windowElement;
+                this.ctx = canvas.getContext('2d');
+                this.nextCanvas = document.getElementById('tetris-next-canvas');
+                this.nextCtx = this.nextCanvas.getContext('2d');
+                this.scale = 16;
+                this.nextScale = 8;
+                this.arena = new Array(20).fill().map(() => new Array(10).fill(0));
+                this.player = {
+                    pos: {x: 0, y: 0},
+                    matrix: null,
+                    score: 0
+                };
+                this.colors = [
+                    null,
+                    '#FF0D72',
+                    '#0DC2FF',
+                    '#0DFF72',
+                    '#F538FF',
+                    '#FF8E0D',
+                    '#FFE138',
+                    '#3877FF',
+                ];
+                this.normalDropInterval = 1000;
+                this.softDropInterval = 50;
+                this.currentDropInterval = this.normalDropInterval;
+                this.dropCounter = 0;
+                this.lastTime = 0;
+                this.paused = false;
+                this.gameOver = false;
+                this.nextPiece = this.createRandomPiece();
+
+                this.handleKeyDown = (event) => {
+                    if (this.gameOver || !this.windowElement.classList.contains('focused')) return;
+                    if (this.paused) return;
+
+                    if (event.keyCode === 37) this.playerMove(-1);
+                    if (event.keyCode === 39) this.playerMove(1);
+                    if (event.keyCode === 40) {
+                        this.currentDropInterval = this.softDropInterval;
+                        this.playerDrop();
+                    }
+                    if (event.keyCode === 38) this.playerRotate();
+                };
+
+                document.addEventListener('keydown', this.handleKeyDown);
+            }
+
+            createPiece(type) {
+                const pieces = {
+                    'T': [[0,1,0], [1,1,1], [0,0,0]],
+                    'O': [[2,2], [2,2]],
+                    'L': [[0,0,3], [3,3,3], [0,0,0]],
+                    'J': [[4,0,0], [4,4,4], [0,0,0]],
+                    'I': [[0,0,0,0], [5,5,5,5], [0,0,0,0], [0,0,0,0]],
+                    'S': [[0,6,6], [6,6,0], [0,0,0]],
+                    'Z': [[7,7,0], [0,7,7], [0,0,0]]
+                };
+                return pieces[type];
+            }
+
+            createRandomPiece() {
+                const pieces = ['T','O','L','J','I','S','Z'];
+                const piece = pieces[Math.floor(Math.random() * pieces.length)];
+                let matrix = this.createPiece(piece);
+                const rotations = Math.floor(Math.random() * 4);
+                for (let i = 0; i < rotations; i++) {
+                    matrix = this.rotateMatrix(matrix);
+                }
+                return matrix;
+            }
+
+            collide(matrix, offset) {
+                const [m, o] = [matrix, offset || this.player.pos];
+                for (let y = 0; y < m.length; ++y) {
+                    for (let x = 0; x < m[y].length; ++x) {
+                        if (m[y][x] !== 0 && (
+                            this.arena[y + o.y]?.[x + o.x] !== 0 ||
+                            x + o.x < 0 ||
+                            x + o.x >= this.arena[0].length ||
+                            y + o.y >= this.arena.length
+                        )) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            merge() {
+                this.player.matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            this.arena[y + this.player.pos.y][x + this.player.pos.x] = value;
+                        }
+                    });
+                });
+            }
+
+            playerDrop() {
+                this.player.pos.y++;
+                if (this.collide(this.player.matrix)) {
+                    this.player.pos.y--;
+                    this.merge();
+                    this.playerReset();
+                    this.arenaSweep();
+                    this.updateScore();
+                    this.currentDropInterval = this.normalDropInterval;
+                }
+                this.dropCounter = 0;
+            }
+
+            playerMove(dir) {
+                this.player.pos.x += dir;
+                if (this.collide(this.player.matrix)) {
+                    this.player.pos.x -= dir;
+                    return false;
+                }
+                return true;
+            }
+
+            playerReset() {
+                if (this.gameOver) return;
+
+                this.player.matrix = this.nextPiece;
+                this.nextPiece = this.createRandomPiece();
+                this.player.pos.y = 0;
+                const arenaWidth = this.arena[0].length;
+                const pieceWidth = this.player.matrix[0].length;
+                this.player.pos.x = Math.floor((arenaWidth - pieceWidth) / 2);
+
+                if (this.collide(this.player.matrix)) {
+                    this.showGameOver();
+                }
+            }
+
+            showGameOver() {
+                this.gameOver = true;
+                this.paused = true;
+                document.getElementById('tetris-game-over').style.display = 'block';
+                document.getElementById('final-score').textContent = this.player.score;
+            }
+
+            resetGame() {
+                this.arena = new Array(20).fill().map(() => new Array(10).fill(0));
+                this.player.score = 0;
+                this.gameOver = false;
+                this.paused = false;
+                this.nextPiece = this.createRandomPiece();
+                document.getElementById('tetris-game-over').style.display = 'none';
+                this.updateScore();
+                this.playerReset();
+                this.update();
+            }
+
+            playerRotate() {
+                const pos = this.player.pos.x;
+                let offset = 1;
+                const matrix = this.rotateMatrix(this.player.matrix);
+
+                if (!this.collide(matrix)) {
+                    this.player.matrix = matrix;
+                    return;
+                }
+
+                while (this.collide(matrix, {x: pos + offset, y: this.player.pos.y})) {
+                    offset = -(offset + (offset > 0 ? 1 : -1));
+                    if (offset > matrix[0].length) {
+                        this.player.matrix = this.player.matrix;
+                        return;
+                    }
+                }
+
+                this.player.pos.x += offset;
+                this.player.matrix = matrix;
+            }
+
+            rotateMatrix(matrix) {
+                const N = matrix.length;
+                const result = new Array(N).fill(0).map(() => new Array(N).fill(0));
+
+                for (let y = 0; y < N; y++) {
+                    for (let x = 0; x < N; x++) {
+                        result[x][N-1-y] = matrix[y][x];
+                    }
+                }
+                return result;
+            }
+
+            arenaSweep() {
+                let rowCount = 1;
+                outer: for (let y = this.arena.length - 1; y > 0; --y) {
+                    for (let x = 0; x < this.arena[y].length; ++x) {
+                        if (this.arena[y][x] === 0) {
+                            continue outer;
+                        }
+                    }
+                    const row = this.arena.splice(y, 1)[0].fill(0);
+                    this.arena.unshift(row);
+                    ++y;
+                    this.player.score += rowCount * 10;
+                    rowCount *= 2;
+                }
+            }
+
+            updateScore() {
+                document.getElementById('score').textContent = this.player.score;
+            }
+
+            draw() {
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawMatrix(this.arena, {x: 0, y: 0});
+                this.drawMatrix(this.player.matrix, this.player.pos);
+                this.drawNextPiece();
+            }
+
+            drawMatrix(matrix, offset, ctx = this.ctx, scale = this.scale) {
+                matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            ctx.fillStyle = this.colors[value];
+                            ctx.fillRect(
+                                (x + offset.x) * scale,
+                                (y + offset.y) * scale,
+                                scale - 1,
+                                scale - 1
+                            );
+                        }
+                    });
+                });
+            }
+
+            drawNextPiece() {
+                this.nextCtx.fillStyle = '#000';
+                this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+                const matrix = this.nextPiece;
+                const offsetX = (this.nextCanvas.width / this.nextScale - matrix[0].length) / 2;
+                const offsetY = (this.nextCanvas.height / this.nextScale - matrix.length) / 2;
+                this.drawMatrix(matrix, {x: offsetX, y: offsetY}, this.nextCtx, this.nextScale);
+            }
+
+            update(time = 0) {
+                if (this.paused || this.gameOver) return;
+
+                const deltaTime = time - this.lastTime;
+                this.lastTime = time;
+                this.dropCounter += deltaTime;
+
+                if (this.dropCounter > this.currentDropInterval) {
+                    this.playerDrop();
+                    this.dropCounter = 0;
+                }
+
+                this.draw();
+                requestAnimationFrame((time) => this.update(time));
+            }
+
+            start() {
+                this.resetGame();
+            }
+
+            togglePause() {
+                if (this.gameOver) return;
+                this.paused = !this.paused;
+                document.getElementById('tetris-pause-btn').textContent = 
+                    this.paused ? 'Resume' : 'Pause';
+                if (!this.paused) this.update();
+            }
+        }
+
+        class PongGame {
+            constructor(canvas, windowElement) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.windowElement = windowElement;
+                this.paddleHeight = 80;
+                this.paddleWidth = 10;
+                this.ballSize = 8;
+                this.winningScore = 5;
+                this.keys = {};
+                this.running = false;
+                this.baseSpeed = 5;
+                this.speedMultiplier = 1.0;
+                this.paused = false;
+                this.gameMode = 'local';
+                this.botDifficulty = 0.7;
+
+                this.canvas.width = 600;
+                this.canvas.height = 400;
+
+                this.handleKeyDown = (e) => {
+                    if (e.key === 'Escape') this.togglePause();
+                    this.keys[e.key] = true;
+                };
+                this.handleKeyUp = (e) => this.keys[e.key] = false;
+
+                this.showStartScreen();
+            }
+
+            showStartScreen() {
+                document.getElementById('pong-start-screen').style.display = 'block';
+            }
+
+            start(mode) {
+                this.gameMode = mode;
+                document.getElementById('pong-start-screen').style.display = 'none';
+                this.resetGame();
+
+                if (!this.running) {
+                    this.running = true;
+                    this.gameLoop = setInterval(() => this.update(), 1000/60);
+                }
+
+                document.addEventListener('keydown', this.handleKeyDown);
+                document.addEventListener('keyup', this.handleKeyUp);
+            }
+
+            togglePause() {
+                this.paused = !this.paused;
+                document.getElementById('pong-pause-btn').textContent = 
+                    this.paused ? 'Resume' : 'Pause';
+            }
+
+            resetGame() {
+                this.player1 = { y: this.canvas.height/2 - this.paddleHeight/2, score: 0 };
+                this.player2 = { y: this.canvas.height/2 - this.paddleHeight/2, score: 0 };
+                this.resetBall();
+                this.gameOver = false;
+                this.paused = false;
+                document.getElementById('pong-game-over').style.display = 'none';
+                document.getElementById('player1-score').textContent = '0';
+                document.getElementById('player2-score').textContent = '0';
+            }
+
+            resetBall() {
+                this.speedMultiplier = 1.0;
+                this.ball = {
+                    x: this.canvas.width/2,
+                    y: this.canvas.height/2,
+                    speedX: this.baseSpeed * (Math.random() > 0.5 ? 1 : -1),
+                    speedY: (Math.random() * 3 - 1.5)
+                };
+            }
+
+            update() {
+                if (this.gameOver || this.paused || !this.windowElement.classList.contains('focused')) return;
+
+                if (this.keys.w && this.player1.y > 0) this.player1.y -= 8;
+                if (this.keys.s && this.player1.y < this.canvas.height - this.paddleHeight) this.player1.y += 8;
+
+                if (this.gameMode === 'local') {
+                    if (this.keys.ArrowUp && this.player2.y > 0) this.player2.y -= 8;
+                    if (this.keys.ArrowDown && this.player2.y < this.canvas.height - this.paddleHeight) this.player2.y += 8;
+                } else {
+                    const botBaseSpeed = 5 * this.botDifficulty;
+                    const reactionDelay = 0.3 * (1 - this.botDifficulty);
+                    const predictionError = 40 * (1 - this.botDifficulty);
+                    const mistakeChance = 0.03 * (1 - this.botDifficulty);
+
+                    const predictedY = this.ball.y + 
+                        (this.ball.speedY * reactionDelay) + 
+                        (Math.random() * predictionError - predictionError/2);
+
+                    const targetY = Math.min(
+                        Math.max(
+                            predictedY - this.paddleHeight/2,
+                            0
+                        ),
+                        this.canvas.height - this.paddleHeight
+                    );
+
+                    const distance = targetY - this.player2.y;
+                    const moveThreshold = 15 + (20 * (1 - this.botDifficulty));
+
+                    if (Math.abs(distance) > moveThreshold) {
+                        const speed = botBaseSpeed * (0.7 + Math.random() * 0.6);
+                        this.player2.y += distance > 0 ? speed : -speed;
+                    }
+
+                    if (Math.random() < mistakeChance) {
+                        this.player2.y += (Math.random() < 0.5 ? -1 : 1) * botBaseSpeed;
+                    }
+
+                    this.player2.y = Math.max(0, 
+                        Math.min(this.canvas.height - this.paddleHeight, this.player2.y)
+                    );
+                }
+
+                this.ball.x += this.ball.speedX * this.speedMultiplier;
+                this.ball.y += this.ball.speedY * this.speedMultiplier;
+
+                if (this.ball.y < 0 || this.ball.y > this.canvas.height - this.ballSize) {
+                    this.ball.speedY *= -1;
+                }
+
+                if (this.ball.speedX < 0 && this.checkPaddleCollision(this.player1)) {
+                    this.ball.speedX *= -1;
+                    this.increaseSpeed();
+                }
+
+                if (this.ball.speedX > 0 && this.checkPaddleCollision(this.player2)) {
+                    this.ball.speedX *= -1;
+                    this.increaseSpeed();
+                }
+
+                if (this.ball.x < 0) this.handleScore(2);
+                if (this.ball.x > this.canvas.width) this.handleScore(1);
+
+                this.draw();
+            }
+
+            checkPaddleCollision(paddle) {
+                return this.ball.y + this.ballSize > paddle.y && 
+                       this.ball.y < paddle.y + this.paddleHeight && 
+                       ((this.ball.speedX < 0 && this.ball.x < 20 + this.paddleWidth) ||
+                        (this.ball.speedX > 0 && this.ball.x > this.canvas.width - 20 - this.paddleWidth));
+            }
+
+            handleScore(player) {
+                if (player === 1) {
+                    this.player1.score++;
+                    document.getElementById('player1-score').textContent = this.player1.score;
+                } else {
+                    this.player2.score++;
+                    document.getElementById('player2-score').textContent = this.player2.score;
+                }
+
+                if (this.player1.score >= this.winningScore || this.player2.score >= this.winningScore) {
+                    this.gameOver = true;
+                    document.getElementById('pong-winner').textContent = 
+                        this.player1.score > this.player2.score ? "Player 1" : "Player 2";
+                    document.getElementById('pong-game-over').style.display = 'block';
+                    clearInterval(this.gameLoop);
+                    this.running = false;
+                } else {
+                    this.resetBall();
+                }
+            }
+
+            increaseSpeed() {
+                this.speedMultiplier = Math.min(1.5, this.speedMultiplier * 1.05);
+                this.ball.speedY = ((this.ball.y - (this.player1.y + this.paddleHeight/2)) / 16);
+            }
+
+            draw() {
+                this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--header-bg');
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+                this.ctx.fillRect(20, this.player1.y, this.paddleWidth, this.paddleHeight);
+                this.ctx.fillRect(this.canvas.width - 20 - this.paddleWidth, this.player2.y, this.paddleWidth, this.paddleHeight);
+
+                this.ctx.beginPath();
+                this.ctx.arc(this.ball.x, this.ball.y, this.ballSize, 0, Math.PI * 2);
+                this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+                this.ctx.fill();
+                this.ctx.closePath();
+
+                this.ctx.setLineDash([5, 15]);
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.canvas.width / 2, 0);
+                this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
+                this.ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+                this.ctx.stroke();
+            }
+
+            stop() {
+                this.running = false;
+                clearInterval(this.gameLoop);
+                document.removeEventListener('keydown', this.handleKeyDown);
+                document.removeEventListener('keyup', this.handleKeyUp);
+            }
+        }
+
+        function restartPong() {
+            if (pongGame) {
+                pongGame.stop();
+                pongGame.showStartScreen();
+            }
+        }
+
+        function startPong(mode) {
+            if (pongGame) pongGame.start(mode);
+        }
+
+        function togglePongPause() {
+            if (pongGame) pongGame.togglePause();
+        }
+
+        function restartTetris() {
+            if (tetrisGame) tetrisGame.resetGame();
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (document.getElementById('calculator-app').classList.contains('focused')) {
+                const key = event.key;
+                if (key >= '0' && key <= '9') appendNumber(key);
+                if (key === '.') appendDecimal();
+                if (['+', '-', '*', '/'].includes(key)) appendOperator(key);
+                if (key === 'Enter') calculate();
+                if (key === 'Escape') clearDisplay();
+            }
+        });
+
+        function toggleTetrisPause() {
+            if (tetrisGame) tetrisGame.togglePause();
+        }
+
+        function minimizeApp(appName) {
+            const appWindow = document.getElementById(`${appName}-app`);
+            appWindow.classList.add('hidden');
+            openApps = openApps.map(app => {
+                if (app.id === appName) return {...app, minimized: true};
+                return app;
+            });
+            updateTaskbar();
+        }
+
+        function saveIconPositions() {
+            const icons = document.querySelectorAll('.app-icon');
+            const positions = {};
+            icons.forEach(icon => {
+                positions[icon.dataset.app] = {
+                    left: parseInt(icon.style.left) || 0,
+                    top: parseInt(icon.style.top) || 0
+                };
+            });
+            localStorage.setItem('iconPositions', JSON.stringify(positions));
+        }
+
+        function loadIconPositions() {
+            const saved = localStorage.getItem('iconPositions');
+            if (saved) {
+                const positions = JSON.parse(saved);
+                document.querySelectorAll('.app-icon').forEach(icon => {
+                    const app = icon.dataset.app;
+                    if (positions[app]) {
+                        icon.style.left = `${positions[app].left}px`;
+                        icon.style.top = `${positions[app].top}px`;
+                    }
+                });
+            }
+        }
+
+        document.querySelectorAll('.app-icon').forEach(icon => {
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let initialX = 0, initialY = 0;
+
+            icon.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = parseInt(icon.style.left) || 0;
+                initialY = parseInt(icon.style.top) || 0;
+                icon.style.transition = 'none';
+                icon.style.zIndex = zIndexCounter++;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                icon.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+
+                const finalX = initialX + (parseFloat(icon.style.transform.split(',')[0].replace('translate(', '')) || 0);
+                const finalY = initialY + (parseFloat(icon.style.transform.split(',')[1]) || 0);
+                const snappedX = Math.round(finalX / GRID_SIZE) * GRID_SIZE;
+                const snappedY = Math.round(finalY / GRID_SIZE) * GRID_SIZE;
+
+                let collision = false;
+                document.querySelectorAll('.app-icon').forEach(otherIcon => {
+                    if (otherIcon === icon) return;
+                    const otherX = parseInt(otherIcon.style.left) || 0;
+                    const otherY = parseInt(otherIcon.style.top) || 0;
+                    if (otherX === snappedX && otherY === snappedY) collision = true;
+                });
+
+                if (collision) {
+                    icon.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                    icon.style.transform = 'none';
+                    icon.style.left = `${initialX}px`;
+                    icon.style.top = `${initialY}px`;
+                } else {
+                    icon.style.transition = 'all 0.1s';
+                    icon.style.transform = 'none';
+                    icon.style.left = `${snappedX}px`;
+                    icon.style.top = `${snappedY}px`;
+                    saveIconPositions();
+                }
+            });
+        });
+
+        function updateAccentColor(color) {
+            document.documentElement.style.setProperty('--accent-color', color);
+            localStorage.setItem('accentColor', color);
+            document.getElementById('accent-preview').style.backgroundColor = color;
+        }
+
+        function toggleThemeMode(mode) {
+            document.body.classList.toggle('light-mode', mode === 'light');
+            localStorage.setItem('themeMode', mode);
+        }
+
+        function updateBackground() {
+            const url = document.getElementById('bg-image-url').value;
+            const desktop = document.getElementById('desktop');
+            if (url) {
+                desktop.style.backgroundImage = `url('${url}')`;
+                localStorage.setItem('backgroundImage', url);
+            } else {
+                desktop.style.backgroundImage = '';
+                localStorage.removeItem('backgroundImage');
+            }
+        }
+
+        function clearBackgroundImage() {
+            document.getElementById('bg-image-url').value = '';
+            document.getElementById('desktop').style.backgroundImage = '';
+            localStorage.removeItem('backgroundImage');
+        }
+
+        function updateBackgroundColor(color) {
+            const desktop = document.getElementById('desktop');
+            desktop.style.backgroundColor = color;
+            localStorage.setItem('backgroundColor', color);
+            document.getElementById('bg-color-preview').style.backgroundColor = color;
+        }
+
+        function loadThemeSettings() {
+            const savedColor = localStorage.getItem('accentColor') || '#00ff00';
+            const themeMode = localStorage.getItem('themeMode') || 'dark';
+            const bgImage = localStorage.getItem('backgroundImage');
+            const bgColor = localStorage.getItem('backgroundColor') || 'var(--bg-color)';
+
+            updateAccentColor(savedColor);
+            toggleThemeMode(themeMode);
+            document.getElementById('accent-picker').value = savedColor;
+            document.getElementById('theme-mode').value = themeMode;
+
+            const desktop = document.getElementById('desktop');
+            if (bgImage) {
+                desktop.style.backgroundImage = `url('${bgImage}')`;
+                document.getElementById('bg-image-url').value = bgImage;
+            }
+            if (bgColor) {
+                desktop.style.backgroundColor = bgColor;
+                document.getElementById('bg-color-picker').value = bgColor;
+                document.getElementById('bg-color-preview').style.backgroundColor = bgColor;
+            }
+        }
+
+        function showSignup() {
+            document.getElementById('signup-container').classList.remove('hidden');
+            document.getElementById('login-container').classList.add('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('signup-container').classList.add('hidden');
+            document.getElementById('login-container').classList.remove('hidden');
+        }
+
+        function createAccount() {
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+
+            if (!username || !password) {
+                showError('Please fill all fields');
+                return;
+            }
+
+            localStorage.setItem('user', JSON.stringify({ username, password }));
+            showLogin();
+        }
+
+        function login() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!user) return showError('No account found');
+            if (user.username === username && user.password === password) {
+                document.querySelector('.terminal-window').classList.add('hidden');
+                document.getElementById('desktop').classList.remove('hidden');
+            } else {
+                showError('Invalid credentials');
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('Permanently delete account?')) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+
+        function openApp(appName) {
+            const appWindow = document.getElementById(`${appName}-app`);
+            if (!openApps.find(a => a.id === appName)) {
+                openApps.push({ id: appName, name: appName });
+                updateTaskbar();
+
+                if (appName === 'tetris' && !tetrisGame) {
+                    tetrisGame = new TetrisGame(document.getElementById('tetris-canvas'), appWindow);
+                    tetrisGame.start();
+                }
+
+                if (appName === 'pong' && !pongGame) {
+                    pongGame = new PongGame(document.getElementById('pong-canvas'), appWindow);
+                }
+
+                if (!appWindow.dataset.positioned) {
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    appWindow.style.left = `${Math.round((viewportWidth - 300) / 2 / GRID_SIZE) * GRID_SIZE}px`;
+                    appWindow.style.top = `${Math.round((viewportHeight - 150) / 2 / GRID_SIZE) * GRID_SIZE}px`;
+                    appWindow.dataset.positioned = true;
+                }
+            }
+            zIndexCounter++;
+            appWindow.style.zIndex = zIndexCounter;
+            appWindow.classList.remove('hidden');
+            focusApp(appName);
+        }
+
+        function closeApp(appName) {
+            const appWindow = document.getElementById(`${appName}-app`);
+            appWindow.classList.add('hidden');
+            openApps = openApps.filter(a => a.id !== appName);
+            updateTaskbar();
+            if (appName === 'tetris') {
+                document.removeEventListener('keydown', tetrisGame.handleKeyDown);
+                tetrisGame = null;
+            }
+            if (appName === 'pong') {
+                pongGame.stop();
+                pongGame = null;
+            }
+        }
+
+        function updateTaskbar() {
+            document.getElementById('taskbar-apps').innerHTML = openApps.map(app => `
+                <div class="taskbar-app ${app.minimized ? 'minimized' : ''} ${document.getElementById(`${app.id}-app`).classList.contains('focused') ? 'active' : ''}" 
+                     onclick="focusApp('${app.id}')">
+                    <img src="img/${app.id}.png" alt="${app.name}">
+                    ${app.name}
+                </div>
+            `).join('');
+        }
+
+        function focusApp(appId) {
+            const appWindow = document.getElementById(`${appId}-app`);
+            zIndexCounter++;
+            appWindow.style.zIndex = zIndexCounter;
+            appWindow.classList.remove('hidden');
+            appWindow.classList.add('focused');
+            document.querySelectorAll('.app-window').forEach(win => {
+                if (win !== appWindow) win.classList.remove('focused');
+            });
+            openApps = openApps.map(app => {
+                if (app.id === appId) return {...app, minimized: false};
+                return app;
+            });
+            updateTaskbar();
+        }
+
+        document.querySelectorAll('.window-header').forEach(header => {
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let initialX = 0, initialY = 0;
+            const window = header.parentElement;
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = window.offsetLeft;
+                initialY = window.offsetTop;
+                window.style.transition = 'none';
+                window.style.zIndex = zIndexCounter++;
+                focusApp(window.id.replace('-app', ''));
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                window.style.left = `${initialX + deltaX}px`;
+                window.style.top = `${initialY + deltaY}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                window.style.transition = 'all 0.1s';
+            });
+        });
+
+        function appendNumber(num) {
+            currentExpression += num;
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            currentExpression += ` ${op} `;
+            updateDisplay();
+        }
+
+        function appendDecimal() {
+            if (!currentExpression.includes('.')) currentExpression += '.';
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentExpression = '';
+            updateDisplay();
+        }
+
+        function calculate() {
+            try {
+                currentExpression = eval(currentExpression.replace(/×/g, '*').replace(/÷/g, '/')).toString();
+                updateDisplay();
+            } catch {
+                currentExpression = '';
+                updateDisplay();
+                alert('Invalid calculation');
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('display').textContent = currentExpression || '0';
+        }
+
+        function updateClock() {
+            document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+
+        function toggleAppLauncher() {
+            const launcher = document.getElementById('app-launcher');
+            launcher.style.display = launcher.style.display === 'block' ? 'none' : 'block';
+        }
+
+        document.getElementById('app-search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.app-item').forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? 'flex' : 'none';
+            });
+        });
+
+        window.onload = () => {
+            loadThemeSettings();
+            loadIconPositions();
+            updateClock();
+            if (localStorage.getItem('user')) showLogin();
+            else showSignup();
+        };
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            setTimeout(() => errorDiv.textContent = '', 3000);
+        }
+
+        // Browser functions
+        let browserTabs = {
+            'tab-1': { title: 'New Tab', url: '' }
+        };
+        let currentTabId = 'tab-1';
+        let tabCounter = 1;
+        let browserHistory = [];
+
+        // Tab functions
+        function createNewTab() {
+            tabCounter++;
+            const tabId = `tab-${tabCounter}`;
+
+            // Create new tab element
+            const tabElement = document.createElement('div');
+            tabElement.className = 'browser-tab';
+            tabElement.dataset.tabId = tabId;
+            tabElement.innerHTML = `
+                <span class="browser-tab-title">New Tab</span>
+                <span class="browser-tab-close" onclick="closeTab('${tabId}', event)">×</span>
+            `;
+            tabElement.addEventListener('click', () => switchTab(tabId));
+
+            // Insert before the new tab button
+            const tabsContainer = document.getElementById('browser-tabs');
+            tabsContainer.insertBefore(tabElement, document.querySelector('.browser-new-tab'));
+
+            // Create new iframe for this tab
+            const iframe = document.createElement('iframe');
+            iframe.id = `browser-iframe-${tabId}`;
+            iframe.className = 'browser-iframe';
+            iframe.dataset.tabId = tabId;
+            iframe.sandbox = 'allow-same-origin allow-scripts allow-forms allow-popups';
+            document.getElementById('browser-content').appendChild(iframe);
+
+            // Store tab info
+            browserTabs[tabId] = { title: 'New Tab', url: '' };
+
+            // Switch to the new tab
+            switchTab(tabId);
+        }
+
+        function switchTab(tabId) {
+            // Check if the tab exists
+            if (!browserTabs[tabId]) {
+                // If the tab doesn't exist, switch to the first available tab
+                const availableTabs = Object.keys(browserTabs);
+                if (availableTabs.length > 0) {
+                    tabId = availableTabs[0];
+                } else {
+                    // If no tabs exist, create a new one
+                    createNewTab();
+                    return;
+                }
+            }
+
+            // Update active tab class
+            document.querySelectorAll('.browser-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tabId === tabId);
+            });
+
+            // Update active iframe
+            document.querySelectorAll('.browser-iframe').forEach(iframe => {
+                iframe.classList.toggle('active', iframe.dataset.tabId === tabId);
+            });
+
+            // Update current tab ID
+            currentTabId = tabId;
+
+            // Update address bar with the current tab's URL
+            document.getElementById('browser-url').value = browserTabs[tabId].url || '';
+
+            // Hide error and home screens if tab has content
+            if (browserTabs[tabId].url) {
+                document.getElementById('browser-home').style.display = 'none';
+                document.getElementById('browser-error').style.display = 'none';
+            } else {
+                document.getElementById('browser-home').style.display = 'flex';
+                document.getElementById('browser-error').style.display = 'none';
+            }
+        }
+
+        function closeTab(tabId, event) {
+            if (event) event.stopPropagation();
+
+            // Don't close if it's the last tab
+            if (Object.keys(browserTabs).length <= 1) return;
+
+            // Remove tab element
+            const tabElement = document.querySelector(`.browser-tab[data-tab-id="${tabId}"]`);
+            if (tabElement) tabElement.remove();
+
+            // Remove iframe
+            const iframe = document.getElementById(`browser-iframe-${tabId}`);
+            if (iframe) iframe.remove();
+
+            // Remove from tabs object
+            delete browserTabs[tabId];
+
+            // If we closed the current tab, switch to another one
+            if (currentTabId === tabId) {
+                const newTabId = Object.keys(browserTabs)[0];
+                switchTab(newTabId);
+            }
+        }
+
+        function updateTabTitle(tabId, title) {
+            browserTabs[tabId].title = title || 'New Tab';
+            const tabElement = document.querySelector(`.browser-tab[data-tab-id="${tabId}"] .browser-tab-title`);
+            if (tabElement) {
+                tabElement.textContent = title || 'New Tab';
+            }
+        }
+
+        // History functions
+        function addToHistory(url, title) {
+            if (!url) return;
+
+            // Add to history array
+            browserHistory.unshift({
+                url: url,
+                title: title || url,
+                timestamp: new Date().toISOString()
+            });
+
+            // Limit history size
+            if (browserHistory.length > 100) {
+                browserHistory.pop();
+            }
+
+            // Save to localStorage
+            localStorage.setItem('browserHistory', JSON.stringify(browserHistory));
+
+            // Update history panel if open
+            if (document.getElementById('browser-history-panel').classList.contains('show')) {
+                displayHistory();
+            }
+        }
+
+        function loadHistory() {
+            const savedHistory = localStorage.getItem('browserHistory');
+            if (savedHistory) {
+                browserHistory = JSON.parse(savedHistory);
+            }
+        }
+
+        function displayHistory() {
+            const historyContainer = document.getElementById('browser-history-items');
+            historyContainer.innerHTML = '';
+
+            if (browserHistory.length === 0) {
+                historyContainer.innerHTML = '<div class="browser-history-item">No history items</div>';
+                return;
+            }
+
+            browserHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'browser-history-item';
+                historyItem.innerHTML = `
+                    <div class="browser-history-title">${item.title}</div>
+                    <div class="browser-history-time">${formatHistoryTime(item.timestamp)}</div>
+                `;
+                historyItem.addEventListener('click', () => {
+                    loadSpecificURL(item.url);
+                    toggleHistoryPanel();
+                });
+                historyContainer.appendChild(historyItem);
+            });
+        }
+
+        function formatHistoryTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        function toggleHistoryPanel() {
+            const panel = document.getElementById('browser-history-panel');
+            const isShowing = panel.classList.toggle('show');
+
+            if (isShowing) {
+                displayHistory();
+            }
+        }
+
+        function clearBrowserHistory() {
+            browserHistory = [];
+            localStorage.removeItem('browserHistory');
+            displayHistory();
+        }
+
+        // Search engine functions
+        function updateSearchPlaceholder() {
+            const select = document.getElementById('search-engine-select');
+            const searchInput = document.getElementById('browser-search');
+            const engine = select.value;
+            searchInput.placeholder = `Search with ${engine.charAt(0).toUpperCase() + engine.slice(1)}...`;
+        }
+
+        function searchWeb() {
+            const searchInput = document.getElementById('browser-search');
+            const searchQuery = searchInput.value.trim();
+            const searchEngine = document.getElementById('search-engine-select').value;
+
+            if (!searchQuery) return;
+
+            let searchUrl;
+            switch (searchEngine) {
+                case 'google':
+                    searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+                    break;
+                case 'duckduckgo':
+                    searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`;
+                    break;
+                case 'yahoo':
+                    searchUrl = `https://search.yahoo.com/search?p=${encodeURIComponent(searchQuery)}`;
+                    break;
+                case 'bing':
+                default:
+                    searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(searchQuery)}`;
+                    break;
+            }
+
+            loadSpecificURL(searchUrl);
+        }
+
+        // URL loading functions
+        function loadURL() {
+            const urlInput = document.getElementById('browser-url');
+            let url = urlInput.value.trim();
+
+            loadSpecificURL(url);
+        }
+
+        function loadSpecificURL(url) {
+            // Check if the current tab exists
+            if (!browserTabs[currentTabId]) {
+                // If the current tab doesn't exist, switch to the first available tab
+                const availableTabs = Object.keys(browserTabs);
+                if (availableTabs.length > 0) {
+                    currentTabId = availableTabs[0];
+                } else {
+                    // If no tabs exist, create a new one
+                    createNewTab();
+                    return;
+                }
+            }
+
+            if (!url) {
+                // Show home screen if URL is empty
+                const iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+                if (iframe) iframe.style.display = 'none';
+                document.getElementById('browser-home').style.display = 'flex';
+                document.getElementById('browser-error').style.display = 'none';
+                browserTabs[currentTabId].url = '';
+                updateTabTitle(currentTabId, 'New Tab');
+                return;
+            }
+
+            // Add https:// if no protocol is specified
+            if (url && !url.match(/^https?:\/\//i)) {
+                url = 'https://' + url;
+                document.getElementById('browser-url').value = url;
+            }
+
+            try {
+                // Show iframe, hide home and error screens
+                let iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+                if (!iframe) {
+                    // If the iframe doesn't exist, create it
+                    const newIframe = document.createElement('iframe');
+                    newIframe.id = `browser-iframe-${currentTabId}`;
+                    newIframe.className = 'browser-iframe active';
+                    newIframe.dataset.tabId = currentTabId;
+                    newIframe.sandbox = 'allow-same-origin allow-scripts allow-forms allow-popups';
+                    document.getElementById('browser-content').appendChild(newIframe);
+
+                    // Update the iframe reference
+                    iframe = newIframe;
+                }
+
+                // Make sure iframe exists before accessing its properties
+                if (iframe) {
+                    iframe.style.display = 'block';
+
+                    // Handle load errors
+                    iframe.onerror = function() {
+                        showBrowserError('Failed to load: ' + url);
+                    };
+
+                    iframe.onload = function() {
+                        // Update URL bar with the current URL
+                        try {
+                            const currentUrl = iframe.contentWindow.location.href;
+                            document.getElementById('browser-url').value = currentUrl;
+                            browserTabs[currentTabId].url = currentUrl;
+
+                            // Try to get page title
+                            try {
+                                const pageTitle = iframe.contentDocument.title;
+                                updateTabTitle(currentTabId, pageTitle);
+
+                                // Add to history
+                                addToHistory(currentUrl, pageTitle);
+
+                                // Try to add event listeners to links in the iframe
+                                try {
+                                    // Get all links in the iframe
+                                    const links = iframe.contentDocument.querySelectorAll('a[target="_blank"]');
+
+                                    // Add click event listener to each link
+                                    links.forEach(link => {
+                                        link.addEventListener('click', function(e) {
+                                            // Prevent the default action
+                                            e.preventDefault();
+
+                                            // Get the href attribute
+                                            const href = this.getAttribute('href');
+
+                                            // Open the link in a new tab
+                                            if (href) {
+                                                openInNewTab(href);
+                                            }
+                                        });
+                                    });
+                                } catch (e) {
+                                    // Cross-origin restrictions might prevent accessing the document
+                                    console.log('Could not add event listeners to links: ' + e.message);
+                                }
+                            } catch (e) {
+                                updateTabTitle(currentTabId, new URL(currentUrl).hostname);
+                                addToHistory(currentUrl);
+                            }
+                        } catch (e) {
+                            // Cross-origin restrictions might prevent accessing location
+                            browserTabs[currentTabId].url = url;
+                            updateTabTitle(currentTabId, new URL(url).hostname);
+                            addToHistory(url);
+                        }
+                    };
+
+                    // Load the URL
+                    iframe.src = url;
+                } else {
+                    showBrowserError('Error: Could not create iframe for tab');
+                    return;
+                }
+
+                document.getElementById('browser-home').style.display = 'none';
+                document.getElementById('browser-error').style.display = 'none';
+            } catch (error) {
+                showBrowserError('Error: ' + error.message);
+            }
+        }
+
+        function showBrowserError(message) {
+            // Check if the current tab exists
+            if (!browserTabs[currentTabId]) {
+                // If the current tab doesn't exist, switch to the first available tab
+                const availableTabs = Object.keys(browserTabs);
+                if (availableTabs.length > 0) {
+                    currentTabId = availableTabs[0];
+                } else {
+                    // If no tabs exist, create a new one
+                    createNewTab();
+                    return;
+                }
+            }
+
+            // Hide the iframe if it exists
+            const iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+            if (iframe) iframe.style.display = 'none';
+
+            document.getElementById('browser-home').style.display = 'none';
+            document.getElementById('browser-error').style.display = 'flex';
+            document.getElementById('browser-error-message').textContent = message;
+        }
+
+        function browserGoBack() {
+            try {
+                // Check if the current tab exists
+                if (!browserTabs[currentTabId]) {
+                    // If the current tab doesn't exist, switch to the first available tab
+                    const availableTabs = Object.keys(browserTabs);
+                    if (availableTabs.length > 0) {
+                        currentTabId = availableTabs[0];
+                    } else {
+                        // If no tabs exist, create a new one
+                        createNewTab();
+                        return;
+                    }
+                }
+
+                const iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+                if (!iframe) {
+                    showBrowserError('Cannot go back: iframe not found');
+                    return;
+                }
+                iframe.contentWindow.history.back();
+            } catch (error) {
+                showBrowserError('Cannot go back: ' + error.message);
+            }
+        }
+
+        function browserGoForward() {
+            try {
+                // Check if the current tab exists
+                if (!browserTabs[currentTabId]) {
+                    // If the current tab doesn't exist, switch to the first available tab
+                    const availableTabs = Object.keys(browserTabs);
+                    if (availableTabs.length > 0) {
+                        currentTabId = availableTabs[0];
+                    } else {
+                        // If no tabs exist, create a new one
+                        createNewTab();
+                        return;
+                    }
+                }
+
+                const iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+                if (!iframe) {
+                    showBrowserError('Cannot go forward: iframe not found');
+                    return;
+                }
+                iframe.contentWindow.history.forward();
+            } catch (error) {
+                showBrowserError('Cannot go forward: ' + error.message);
+            }
+        }
+
+        function browserRefresh() {
+            try {
+                // Check if the current tab exists
+                if (!browserTabs[currentTabId]) {
+                    // If the current tab doesn't exist, switch to the first available tab
+                    const availableTabs = Object.keys(browserTabs);
+                    if (availableTabs.length > 0) {
+                        currentTabId = availableTabs[0];
+                    } else {
+                        // If no tabs exist, create a new one
+                        createNewTab();
+                        return;
+                    }
+                }
+
+                const iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+                if (!iframe) {
+                    // If iframe doesn't exist, try loading the current URL again
+                    loadURL();
+                    return;
+                }
+                iframe.contentWindow.location.reload();
+            } catch (error) {
+                // If reload fails, try loading the current URL again
+                loadURL();
+            }
+        }
+
+        // Function to open a URL in a new tab
+        function openInNewTab(url) {
+            // Create a new tab
+            createNewTab();
+
+            // Load the URL in the new tab
+            loadSpecificURL(url);
+        }
+
+        // Function to handle window.open calls from iframes
+        function handleWindowOpen() {
+            // Override window.open to capture new window requests
+            const originalWindowOpen = window.open;
+            window.open = function(url, name, specs, replace) {
+                // If the call is from our browser iframe, open in a new tab
+                if (url && document.getElementById('browser-app').contains(document.activeElement)) {
+                    openInNewTab(url);
+                    return null; // Return null to prevent the actual window from opening
+                }
+                // Otherwise, use the original window.open
+                return originalWindowOpen.call(this, url, name, specs, replace);
+            };
+        }
+
+        // Variables for context menu
+        let contextMenuTarget = null;
+        let contextMenuLink = null;
+
+        // Function to show context menu
+        function showContextMenu(e) {
+            // Prevent default context menu
+            e.preventDefault();
+
+            // Get the context menu element
+            const contextMenu = document.getElementById('browser-context-menu');
+
+            // Clear previous menu items
+            contextMenu.innerHTML = '';
+
+            // Store the target element
+            contextMenuTarget = e.target;
+            contextMenuLink = null;
+
+            // Check if the target is an iframe
+            if (contextMenuTarget.tagName === 'IFRAME' && contextMenuTarget.classList.contains('browser-iframe')) {
+                // Try to get the link under the cursor
+                try {
+                    const iframe = contextMenuTarget;
+                    const rect = iframe.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // Create a temporary element to check if there's a link at the cursor position
+                    const tempElement = document.createElement('div');
+                    tempElement.style.position = 'absolute';
+                    tempElement.style.left = x + 'px';
+                    tempElement.style.top = y + 'px';
+                    tempElement.style.width = '1px';
+                    tempElement.style.height = '1px';
+
+                    // Try to append the element to the iframe document
+                    try {
+                        iframe.contentDocument.body.appendChild(tempElement);
+
+                        // Check if the element is over a link
+                        const link = tempElement.closest('a');
+                        if (link) {
+                            contextMenuLink = link.getAttribute('href');
+
+                            // Add link-specific menu items
+                            addContextMenuItem(contextMenu, 'Open Link in New Tab', 'context-open-in-new-tab');
+                            addContextMenuItem(contextMenu, 'Download Link', 'context-download-link');
+                            addContextMenuItem(contextMenu, 'Copy Link Address', 'context-copy-link');
+
+                            // Add separator
+                            addContextMenuSeparator(contextMenu);
+                        }
+
+                        // Remove the temporary element
+                        tempElement.remove();
+                    } catch (e) {
+                        // Cross-origin restrictions might prevent accessing the document
+                        console.log('Could not check for links: ' + e.message);
+                    }
+                } catch (e) {
+                    console.log('Error showing context menu: ' + e.message);
+                }
+
+                // Add general browser menu items
+                addContextMenuItem(contextMenu, 'Back', 'context-back');
+                addContextMenuItem(contextMenu, 'Forward', 'context-forward');
+                addContextMenuItem(contextMenu, 'Refresh', 'context-refresh');
+                addContextMenuSeparator(contextMenu);
+                addContextMenuItem(contextMenu, 'View Page Source', 'context-view-source');
+                addContextMenuItem(contextMenu, 'Download Page', 'context-download-page');
+
+                // Show the context menu
+                contextMenu.style.left = e.pageX + 'px';
+                contextMenu.style.top = e.pageY + 'px';
+                contextMenu.classList.add('show');
+
+                // Add event listeners to menu items
+                document.getElementById('context-back')?.addEventListener('click', handleContextMenuClick);
+                document.getElementById('context-forward')?.addEventListener('click', handleContextMenuClick);
+                document.getElementById('context-refresh')?.addEventListener('click', handleContextMenuClick);
+                document.getElementById('context-view-source')?.addEventListener('click', handleContextMenuClick);
+                document.getElementById('context-download-page')?.addEventListener('click', handleContextMenuClick);
+
+                if (contextMenuLink) {
+                    document.getElementById('context-open-in-new-tab')?.addEventListener('click', handleContextMenuClick);
+                    document.getElementById('context-download-link')?.addEventListener('click', handleContextMenuClick);
+                    document.getElementById('context-copy-link')?.addEventListener('click', handleContextMenuClick);
+                }
+
+                return;
+            }
+
+            // If we get here, the target is not an iframe
+            // Hide the context menu
+            hideContextMenu();
+        }
+
+        // Helper function to add a context menu item
+        function addContextMenuItem(menu, text, id) {
+            const item = document.createElement('div');
+            item.className = 'browser-context-menu-item';
+            item.id = id;
+            item.textContent = text;
+            menu.appendChild(item);
+            return item;
+        }
+
+        // Helper function to add a context menu separator
+        function addContextMenuSeparator(menu) {
+            const separator = document.createElement('div');
+            separator.className = 'browser-context-menu-separator';
+            separator.style.height = '1px';
+            separator.style.background = 'rgba(255, 255, 255, 0.1)';
+            separator.style.margin = '5px 0';
+            menu.appendChild(separator);
+            return separator;
+        }
+
+        // Function to hide context menu
+        function hideContextMenu() {
+            const contextMenu = document.getElementById('browser-context-menu');
+            contextMenu.classList.remove('show');
+            contextMenuTarget = null;
+            contextMenuLink = null;
+        }
+
+        // Function to handle context menu item clicks
+        function handleContextMenuClick(e) {
+            // Get the clicked item
+            const item = e.target;
+
+            // Check which item was clicked
+            switch (item.id) {
+                case 'context-open-in-new-tab':
+                    // Open the link in a new tab
+                    if (contextMenuLink) {
+                        openInNewTab(contextMenuLink);
+                    }
+                    break;
+
+                case 'context-download-link':
+                    // Download the link
+                    if (contextMenuLink) {
+                        downloadFile(contextMenuLink);
+                    }
+                    break;
+
+                case 'context-copy-link':
+                    // Copy the link to clipboard
+                    if (contextMenuLink) {
+                        try {
+                            navigator.clipboard.writeText(contextMenuLink).then(() => {
+                                alert('Link copied to clipboard');
+                            }).catch(err => {
+                                console.error('Could not copy text: ', err);
+                                // Fallback for older browsers
+                                const textArea = document.createElement('textarea');
+                                textArea.value = contextMenuLink;
+                                document.body.appendChild(textArea);
+                                textArea.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(textArea);
+                                alert('Link copied to clipboard');
+                            });
+                        } catch (err) {
+                            console.error('Could not copy text: ', err);
+                        }
+                    }
+                    break;
+
+                case 'context-back':
+                    // Go back
+                    browserGoBack();
+                    break;
+
+                case 'context-forward':
+                    // Go forward
+                    browserGoForward();
+                    break;
+
+                case 'context-refresh':
+                    // Refresh
+                    browserRefresh();
+                    break;
+
+                case 'context-view-source':
+                    // View page source
+                    viewPageSource();
+                    break;
+
+                case 'context-download-page':
+                    // Download page
+                    downloadCurrentPage();
+                    break;
+            }
+
+            // Hide the context menu
+            hideContextMenu();
+        }
+
+        // Function to view page source
+        function viewPageSource() {
+            if (!browserTabs[currentTabId] || !browserTabs[currentTabId].url) {
+                alert('No page to view source');
+                return;
+            }
+
+            try {
+                const iframe = document.getElementById(`browser-iframe-${currentTabId}`);
+                if (!iframe) {
+                    alert('Cannot view source: iframe not found');
+                    return;
+                }
+
+                try {
+                    // Try to get the HTML content
+                    const content = iframe.contentDocument.documentElement.outerHTML;
+
+                    // Store the original tab info
+                    const originalTabId = currentTabId;
+                    const originalUrl = browserTabs[originalTabId].url;
+                    const originalTitle = browserTabs[originalTabId].title;
+
+                    // Create a new tab
+                    createNewTab();
+
+                    // Get the new tab ID (it's now the current tab after createNewTab)
+                    const newTabId = currentTabId;
+
+                    // Create a pre element with the source
+                    const sourceContent = `
+                        <html>
+                        <head>
+                            <title>Source of: ${originalUrl}</title>
+                            <style>
+                                body { 
+                                    background: #1e1e1e; 
+                                    color: #d4d4d4; 
+                                    font-family: monospace; 
+                                    padding: 20px; 
+                                    white-space: pre-wrap; 
+                                    word-break: break-all;
+                                }
+                                .html-tag { color: #569cd6; }
+                                .html-attr { color: #9cdcfe; }
+                                .html-value { color: #ce9178; }
+                                .html-comment { color: #6a9955; }
+                            </style>
+                        </head>
+                        <body>
+                            <pre>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                        </body>
+                        </html>
+                    `;
+
+                    // Write the content to the new tab
+                    const newIframe = document.getElementById(`browser-iframe-${newTabId}`);
+                    if (newIframe) {
+                        try {
+                            newIframe.contentDocument.open();
+                            newIframe.contentDocument.write(sourceContent);
+                            newIframe.contentDocument.close();
+
+                            // Update tab title
+                            updateTabTitle(newTabId, `Source: ${originalTitle}`);
+
+                            // Update URL in browser tabs object
+                            browserTabs[newTabId].url = `view-source:${originalUrl}`;
+                        } catch (e) {
+                            alert('Error writing source to new tab: ' + e.message);
+                        }
+                    } else {
+                        alert('Error: New tab iframe not found');
+                    }
+
+                } catch (e) {
+                    // Cross-origin restrictions might prevent accessing the document
+                    alert('Cannot view source: ' + e.message);
+                }
+            } catch (e) {
+                alert('Cannot view source: ' + e.message);
+            }
+        }
+
+        // Initialize browser
+        function initBrowser() {
+            loadHistory();
+            updateSearchPlaceholder();
+            handleWindowOpen();
+
+            // Add click event to tabs
+            document.querySelectorAll('.browser-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tabId));
+            });
+
+            // Add context menu event listeners
+            const browserContent = document.getElementById('browser-content');
+            browserContent.addEventListener('contextmenu', showContextMenu);
+
+            // Hide context menu when clicking elsewhere
+            document.addEventListener('click', hideContextMenu);
+
+            // Hide context menu when scrolling
+            document.addEventListener('scroll', hideContextMenu);
+        }
+
+        // Download current page
+        function downloadCurrentPage() {
+            if (!browserTabs[currentTabId] || !browserTabs[currentTabId].url) {
+                alert('No page to download');
+                return;
+            }
+
+            downloadFile(browserTabs[currentTabId].url);
+        }
+
+        // Download file
+        function downloadFile(url) {
+            // Extract filename from URL
+            let filename = url.split('/').pop();
+            if (!filename) filename = 'download';
+
+            // Show file dialog to let user choose filename
+            showFileDialog('Save file as', filename, (newFilename) => {
+                // Create a virtual file in our file system
+                const fileSystem = loadFileSystem();
+                const downloadsPath = '/Downloads';
+
+                // Ensure Downloads folder exists
+                if (!fileSystem[downloadsPath]) {
+                    fileSystem[downloadsPath] = { type: 'folder', children: {} };
+                }
+
+                // Try to fetch the content if it's a text file or HTML page
+                try {
+                    // Create a temporary iframe to fetch the content
+                    const tempFrame = document.createElement('iframe');
+                    tempFrame.style.display = 'none';
+                    document.body.appendChild(tempFrame);
+
+                    // Show loading message
+                    alert('Downloading content... Please wait.');
+
+                    // Set up load event handler
+                    tempFrame.onload = function() {
+                        try {
+                            // Try to get the content from the iframe
+                            let content = '';
+
+                            // Try to get HTML content
+                            try {
+                                content = tempFrame.contentDocument.documentElement.outerHTML;
+                            } catch (e) {
+                                // If we can't get HTML, try to get text content
+                                try {
+                                    content = tempFrame.contentDocument.body.innerText;
+                                } catch (e) {
+                                    // If we can't get text content either, use a placeholder
+                                    content = 'Downloaded from: ' + url + '\n\nContent could not be retrieved due to cross-origin restrictions.';
+                                }
+                            }
+
+                            // Add file to Downloads folder
+                            fileSystem[downloadsPath].children[newFilename] = {
+                                type: 'file',
+                                content: content,
+                                size: content.length + 'B',
+                                date: new Date().toISOString()
+                            };
+
+                            saveFileSystem(fileSystem);
+
+                            // Clean up
+                            document.body.removeChild(tempFrame);
+
+                            // Show confirmation
+                            alert(`File "${newFilename}" downloaded to Downloads folder`);
+                        } catch (e) {
+                            // Fallback if we can't get content
+                            fileSystem[downloadsPath].children[newFilename] = {
+                                type: 'file',
+                                content: 'Downloaded from: ' + url + '\n\nContent could not be retrieved: ' + e.message,
+                                size: 'Unknown',
+                                date: new Date().toISOString()
+                            };
+
+                            saveFileSystem(fileSystem);
+
+                            // Clean up
+                            document.body.removeChild(tempFrame);
+
+                            // Show confirmation
+                            alert(`File "${newFilename}" downloaded to Downloads folder (metadata only)`);
+                        }
+                    };
+
+                    // Set up error handler
+                    tempFrame.onerror = function() {
+                        // Fallback if loading fails
+                        fileSystem[downloadsPath].children[newFilename] = {
+                            type: 'file',
+                            content: 'Downloaded from: ' + url + '\n\nContent could not be loaded.',
+                            size: 'Unknown',
+                            date: new Date().toISOString()
+                        };
+
+                        saveFileSystem(fileSystem);
+
+                        // Clean up
+                        document.body.removeChild(tempFrame);
+
+                        // Show confirmation
+                        alert(`File "${newFilename}" downloaded to Downloads folder (metadata only)`);
+                    };
+
+                    // Load the URL
+                    tempFrame.src = url;
+                } catch (e) {
+                    // Fallback if fetch fails
+                    fileSystem[downloadsPath].children[newFilename] = {
+                        type: 'file',
+                        content: 'Downloaded from: ' + url + '\n\nContent could not be fetched: ' + e.message,
+                        size: 'Unknown',
+                        date: new Date().toISOString()
+                    };
+
+                    saveFileSystem(fileSystem);
+
+                    // Show confirmation
+                    alert(`File "${newFilename}" downloaded to Downloads folder (metadata only)`);
+                }
+            });
+        }
+
+        // File System Simulation
+        let currentPath = '/';
+        let selectedFile = null;
+        let fileDialogCallback = null;
+
+        // Load file system from localStorage
+        function loadFileSystem() {
+            const savedFS = localStorage.getItem('fileSystem');
+            if (savedFS) {
+                return JSON.parse(savedFS);
+            }
+
+            // Initialize with default structure
+            const defaultFS = {
+                '/': {
+                    type: 'folder',
+                    children: {
+                        'Documents': { type: 'folder', children: {} },
+                        'Downloads': { type: 'folder', children: {} },
+                        'Pictures': { type: 'folder', children: {} },
+                        'README.txt': {
+                            type: 'file',
+                            content: 'Welcome to KleHausenOS File System!\n\nThis is a simulated file system that stores files in your browser\'s localStorage.',
+                            size: '120B',
+                            date: new Date().toISOString()
+                        }
+                    }
+                }
+            };
+
+            saveFileSystem(defaultFS);
+            return defaultFS;
+        }
+
+        // Save file system to localStorage
+        function saveFileSystem(fileSystem) {
+            localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
+        }
+
+        // Get folder at path
+        function getFolderAtPath(path) {
+            const fileSystem = loadFileSystem();
+            const parts = path.split('/').filter(p => p);
+
+            let current = fileSystem['/'];
+            if (path === '/') return current;
+
+            for (const part of parts) {
+                if (!current.children[part] || current.children[part].type !== 'folder') {
+                    return null;
+                }
+                current = current.children[part];
+            }
+
+            return current;
+        }
+
+        // Get full path
+        function getFullPath(path) {
+            if (path.startsWith('/')) return path;
+            if (currentPath === '/') return '/' + path;
+            return currentPath + '/' + path;
+        }
+
+        // Navigate to path
+        function navigateTo(path) {
+            const fullPath = getFullPath(path);
+            const folder = getFolderAtPath(fullPath);
+
+            if (folder) {
+                currentPath = fullPath;
+                document.getElementById('file-manager-path').value = currentPath;
+                refreshFileList();
+            } else {
+                alert('Invalid path: ' + fullPath);
+            }
+        }
+
+        // Navigate up
+        function navigateUp() {
+            if (currentPath === '/') return;
+
+            const parts = currentPath.split('/').filter(p => p);
+            parts.pop();
+            const newPath = parts.length ? '/' + parts.join('/') : '/';
+
+            navigateTo(newPath);
+        }
+
+        // Refresh file list
+        function refreshFileList() {
+            const fileList = document.getElementById('file-manager-content');
+            fileList.innerHTML = '';
+
+            const folder = getFolderAtPath(currentPath);
+            if (!folder) {
+                fileList.innerHTML = '<div class="file-manager-empty">Folder not found</div>';
+                return;
+            }
+
+            if (Object.keys(folder.children).length === 0) {
+                fileList.innerHTML = '<div class="file-manager-empty">This folder is empty</div>';
+                return;
+            }
+
+            for (const [name, item] of Object.entries(folder.children)) {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-manager-item';
+                fileItem.dataset.name = name;
+                fileItem.dataset.type = item.type;
+
+                const icon = document.createElement('div');
+                icon.className = 'file-manager-item-icon';
+                icon.textContent = item.type === 'folder' ? '📁' : '📄';
+
+                const fileName = document.createElement('div');
+                fileName.className = 'file-manager-item-name';
+                fileName.textContent = name;
+
+                const fileSize = document.createElement('div');
+                fileSize.className = 'file-manager-item-size';
+                fileSize.textContent = item.type === 'folder' ? '' : item.size;
+
+                const fileDate = document.createElement('div');
+                fileDate.className = 'file-manager-item-date';
+                fileDate.textContent = item.type === 'folder' ? '' : new Date(item.date).toLocaleString();
+
+                fileItem.appendChild(icon);
+                fileItem.appendChild(fileName);
+                fileItem.appendChild(fileSize);
+                fileItem.appendChild(fileDate);
+
+                fileItem.addEventListener('click', (e) => {
+                    // Deselect previously selected item
+                    document.querySelectorAll('.file-manager-item.selected').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+
+                    // Select this item
+                    fileItem.classList.add('selected');
+                    selectedFile = {
+                        name: name,
+                        type: item.type,
+                        path: currentPath
+                    };
+                });
+
+                fileItem.addEventListener('dblclick', (e) => {
+                    if (item.type === 'folder') {
+                        navigateTo(name);
+                    } else {
+                        openFile(currentPath, name);
+                    }
+                });
+
+                fileItem.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+
+                    // Select this item
+                    document.querySelectorAll('.file-manager-item.selected').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+
+                    fileItem.classList.add('selected');
+                    selectedFile = {
+                        name: name,
+                        type: item.type,
+                        path: currentPath
+                    };
+
+                    // Show context menu
+                    const contextMenu = document.getElementById('file-manager-context-menu');
+                    contextMenu.style.left = e.pageX + 'px';
+                    contextMenu.style.top = e.pageY + 'px';
+                    contextMenu.classList.add('show');
+                });
+
+                fileList.appendChild(fileItem);
+            }
+        }
+
+        // Create new folder
+        function createNewFolder() {
+            showFileDialog('New Folder', 'New Folder', (folderName) => {
+                const fileSystem = loadFileSystem();
+                const folder = getFolderAtPath(currentPath);
+
+                if (!folder) {
+                    alert('Invalid path: ' + currentPath);
+                    return;
+                }
+
+                if (folder.children[folderName]) {
+                    alert('A file or folder with this name already exists');
+                    return;
+                }
+
+                folder.children[folderName] = {
+                    type: 'folder',
+                    children: {}
+                };
+
+                saveFileSystem(fileSystem);
+                refreshFileList();
+            });
+        }
+
+        // Create new file
+        function createNewFile() {
+            showFileDialog('New File', 'New File.txt', (fileName) => {
+                const fileSystem = loadFileSystem();
+                const folder = getFolderAtPath(currentPath);
+
+                if (!folder) {
+                    alert('Invalid path: ' + currentPath);
+                    return;
+                }
+
+                if (folder.children[fileName]) {
+                    alert('A file or folder with this name already exists');
+                    return;
+                }
+
+                folder.children[fileName] = {
+                    type: 'file',
+                    content: '',
+                    size: '0B',
+                    date: new Date().toISOString()
+                };
+
+                saveFileSystem(fileSystem);
+                refreshFileList();
+
+                // Open the new file in the text editor
+                openFile(currentPath, fileName);
+            });
+        }
+
+        // Delete file or folder
+        function deleteFile() {
+            if (!selectedFile) {
+                alert('No file selected');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete "${selectedFile.name}"?`)) {
+                return;
+            }
+
+            const fileSystem = loadFileSystem();
+            const folder = getFolderAtPath(selectedFile.path);
+
+            if (!folder) {
+                alert('Invalid path: ' + selectedFile.path);
+                return;
+            }
+
+            delete folder.children[selectedFile.name];
+            saveFileSystem(fileSystem);
+            refreshFileList();
+
+            selectedFile = null;
+        }
+
+        // Rename file or folder
+        function renameFile() {
+            if (!selectedFile) {
+                alert('No file selected');
+                return;
+            }
+
+            showFileDialog('Rename', selectedFile.name, (newName) => {
+                const fileSystem = loadFileSystem();
+                const folder = getFolderAtPath(selectedFile.path);
+
+                if (!folder) {
+                    alert('Invalid path: ' + selectedFile.path);
+                    return;
+                }
+
+                if (folder.children[newName]) {
+                    alert('A file or folder with this name already exists');
+                    return;
+                }
+
+                folder.children[newName] = folder.children[selectedFile.name];
+                delete folder.children[selectedFile.name];
+
+                saveFileSystem(fileSystem);
+                refreshFileList();
+
+                selectedFile = null;
+            });
+        }
+
+        // Open file
+        function openFile(path, name) {
+            const fileSystem = loadFileSystem();
+            const folder = getFolderAtPath(path);
+
+            if (!folder || !folder.children[name] || folder.children[name].type !== 'file') {
+                alert('File not found: ' + path + '/' + name);
+                return;
+            }
+
+            const file = folder.children[name];
+
+            // Open file in text editor
+            openApp('text-editor');
+            document.getElementById('text-editor-textarea').value = file.content;
+            document.getElementById('text-editor-filename').textContent = name;
+            document.getElementById('text-editor-filename').dataset.path = path;
+        }
+
+        // Show file dialog
+        function showFileDialog(title, defaultValue, callback) {
+            const dialog = document.getElementById('file-dialog');
+            const dialogTitle = document.getElementById('file-dialog-title');
+            const dialogInput = document.getElementById('file-dialog-input');
+
+            dialogTitle.textContent = title;
+            dialogInput.value = defaultValue;
+            fileDialogCallback = callback;
+
+            dialog.style.display = 'block';
+            dialogInput.focus();
+            dialogInput.select();
+        }
+
+        // Cancel file dialog
+        function cancelFileDialog() {
+            document.getElementById('file-dialog').style.display = 'none';
+            fileDialogCallback = null;
+        }
+
+        // Confirm file dialog
+        function confirmFileDialog() {
+            const dialog = document.getElementById('file-dialog');
+            const dialogInput = document.getElementById('file-dialog-input');
+
+            const value = dialogInput.value.trim();
+            if (!value) {
+                alert('Please enter a valid name');
+                return;
+            }
+
+            dialog.style.display = 'none';
+
+            if (fileDialogCallback) {
+                fileDialogCallback(value);
+                fileDialogCallback = null;
+            }
+        }
+
+        // Initialize file manager
+        function initFileManager() {
+            // Load file system
+            loadFileSystem();
+
+            // Set current path
+            document.getElementById('file-manager-path').value = currentPath;
+
+            // Refresh file list
+            refreshFileList();
+
+            // Add context menu event listeners
+            document.getElementById('context-open-file').addEventListener('click', () => {
+                if (selectedFile) {
+                    if (selectedFile.type === 'folder') {
+                        navigateTo(selectedFile.name);
+                    } else {
+                        openFile(selectedFile.path, selectedFile.name);
+                    }
+                }
+                document.getElementById('file-manager-context-menu').classList.remove('show');
+            });
+
+            document.getElementById('context-rename-file').addEventListener('click', () => {
+                renameFile();
+                document.getElementById('file-manager-context-menu').classList.remove('show');
+            });
+
+            document.getElementById('context-delete-file').addEventListener('click', () => {
+                deleteFile();
+                document.getElementById('file-manager-context-menu').classList.remove('show');
+            });
+
+            // Hide context menu when clicking elsewhere
+            document.addEventListener('click', () => {
+                document.getElementById('file-manager-context-menu').classList.remove('show');
+            });
+
+            // Add file dialog event listeners
+            document.getElementById('file-dialog-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirmFileDialog();
+                } else if (e.key === 'Escape') {
+                    cancelFileDialog();
+                }
+            });
+        }
+
+        // Text Editor Functions
+        let currentDocument = {
+            path: null,
+            name: 'Untitled',
+            content: ''
+        };
+
+        // New document
+        function newDocument() {
+            if (document.getElementById('text-editor-textarea').value.trim() !== '' &&
+                !confirm('Discard current changes?')) {
+                return;
+            }
+
+            document.getElementById('text-editor-textarea').value = '';
+            document.getElementById('text-editor-filename').textContent = 'Untitled';
+            document.getElementById('text-editor-filename').dataset.path = null;
+
+            currentDocument = {
+                path: null,
+                name: 'Untitled',
+                content: ''
+            };
+        }
+
+        // Open document
+        function openDocument() {
+            // Open file manager if not already open
+            openApp('file-manager');
+        }
+
+        // Save document
+        function saveDocument() {
+            const content = document.getElementById('text-editor-textarea').value;
+            const filename = document.getElementById('text-editor-filename').textContent;
+            const path = document.getElementById('text-editor-filename').dataset.path;
+
+            if (filename === 'Untitled' || !path) {
+                saveDocumentAs();
+                return;
+            }
+
+            const fileSystem = loadFileSystem();
+            const folder = getFolderAtPath(path);
+
+            if (!folder) {
+                alert('Invalid path: ' + path);
+                return;
+            }
+
+            if (!folder.children[filename] || folder.children[filename].type !== 'file') {
+                alert('File not found: ' + path + '/' + filename);
+                return;
+            }
+
+            folder.children[filename].content = content;
+            folder.children[filename].size = content.length + 'B';
+            folder.children[filename].date = new Date().toISOString();
+
+            saveFileSystem(fileSystem);
+            alert('File saved successfully');
+        }
+
+        // Save document as
+        function saveDocumentAs() {
+            const content = document.getElementById('text-editor-textarea').value;
+
+            showFileDialog('Save As', currentDocument.name === 'Untitled' ? 'Untitled.txt' : currentDocument.name, (fileName) => {
+                // Open file manager if not already open
+                openApp('file-manager');
+
+                const fileSystem = loadFileSystem();
+                const folder = getFolderAtPath(currentPath);
+
+                if (!folder) {
+                    alert('Invalid path: ' + currentPath);
+                    return;
+                }
+
+                if (folder.children[fileName] && !confirm('File already exists. Overwrite?')) {
+                    return;
+                }
+
+                folder.children[fileName] = {
+                    type: 'file',
+                    content: content,
+                    size: content.length + 'B',
+                    date: new Date().toISOString()
+                };
+
+                saveFileSystem(fileSystem);
+
+                document.getElementById('text-editor-filename').textContent = fileName;
+                document.getElementById('text-editor-filename').dataset.path = currentPath;
+
+                currentDocument = {
+                    path: currentPath,
+                    name: fileName,
+                    content: content
+                };
+
+                refreshFileList();
+                alert('File saved successfully');
+            });
+        }
+
+        // Initialize text editor
+        function initTextEditor() {
+            // Set up event listeners
+            document.getElementById('text-editor-textarea').addEventListener('input', () => {
+                currentDocument.content = document.getElementById('text-editor-textarea').value;
+            });
+        }
+
+        // Call initBrowser when the browser app is opened
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('browser-app')) {
+                initBrowser();
+            }
+
+            if (document.getElementById('file-manager-app')) {
+                initFileManager();
+            }
+
+            if (document.getElementById('text-editor-app')) {
+                initTextEditor();
+            }
+        });
+    </script>
 </body>
 </html>
